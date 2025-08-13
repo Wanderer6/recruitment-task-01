@@ -1,4 +1,4 @@
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '../fixtures/localization.fixture';
 import { AlertModal } from '../pages/modals/alert.modal';
 import { HeaderComponent } from '../pages/components/header.component';
 import { ShopPage } from '../pages/shop.page';
@@ -11,30 +11,30 @@ test.describe('Product tests', () => {
     await page.goto('');
   });
 
-  test('Add product to the cart', async ({ page, context }) => {
-    const alertModal = new AlertModal(page);
-    const headerComponent = new HeaderComponent(page);
+  test('Add product to the cart', async ({ page, context, localizationFixture }, testInfo) => {
+    const alertModal = new AlertModal(page, localizationFixture.selectors.alertModal);
+    const headerComponent = new HeaderComponent(page, localizationFixture.selectors.headerComponent);
     const shopPage = new ShopPage(page);
-    const productPage = new ProductPage(page);
-    const miniCartModal = new MiniCartModal(page, context);
+    const productPage = new ProductPage(page, localizationFixture.selectors.productPage);
+    const miniCartModal = new MiniCartModal(page, context, localizationFixture.selectors.miniCartModal);
 
-    const expectedProductName = 'Ploom X Advanced Silver';
-    const expectedBasketCount = '1 Item';
+    const expectedProductName = localizationFixture.testData.expectedProductName;
+    const expectedBasketCount = localizationFixture.testData.expectedBasketCount;
 
     await alertModal.acceptCookiesAndAge();
 
     await headerComponent.gotoShop();
-
-    await shopPage.clickProductByTitle('Ploom X Advanced');
+    await shopPage.clickProductByTitle(localizationFixture.testData.productTitle);
 
     await productPage.addToCart();
 
     await miniCartModal.waitForItem();
     const basketCount = await miniCartModal.getBasketCount();
     expect.soft(basketCount).toEqual(expectedBasketCount);
-    const newPage = await miniCartModal.clickCheckout();
+    const projectName = testInfo.project.name;
+    const checkoutPage = await miniCartModal.clickCheckout(projectName);
 
-    const cartPage = new CartPage(newPage);
+    const cartPage = new CartPage(checkoutPage, localizationFixture.selectors.cartPage);
 
     await cartPage.waitForLoadingModule();
 
@@ -42,36 +42,37 @@ test.describe('Product tests', () => {
     expect.soft(productName).toEqual(expectedProductName);
   });
 
-  test('Remove the product from the cart', async ({ page, context }) => {
-    const alertModal = new AlertModal(page);
-    let headerComponent = new HeaderComponent(page);
+  test('Remove the product from the cart', async ({ page, context, localizationFixture }, testInfo) => {
+    const alertModal = new AlertModal(page, localizationFixture.selectors.alertModal);
+    let headerComponent = new HeaderComponent(page, localizationFixture.selectors.headerComponent);
     const shopPage = new ShopPage(page);
-    const productPage = new ProductPage(page);
-    let miniCartModal = new MiniCartModal(page, context);
+    const productPage = new ProductPage(page, localizationFixture.selectors.productPage);
+    let miniCartModal = new MiniCartModal(page, context, localizationFixture.selectors.miniCartModal);
 
-    const expectedProductName = 'Ploom X Advanced Silver';
-    const expectedBasketCount = '1 Item';
-    const expectedDeletedBasketCount = '0 Items';
-    const expectedItemsInformation = 'You have no items in your shopping cart at the moment.';
+    const expectedProductName = localizationFixture.testData.expectedProductName;
+    const expectedBasketCount = localizationFixture.testData.expectedBasketCount;
+    const expectedDeletedBasketCount = localizationFixture.testData.expectedDeletedBasketCount;
+    const expectedItemsInformation = localizationFixture.testData.expectedItemsInformation;
     let basketCount: string;
 
     await alertModal.acceptCookiesAndAge();
 
     await headerComponent.gotoShop();
 
-    await shopPage.clickProductByTitle('Ploom X Advanced');
+    await shopPage.clickProductByTitle(localizationFixture.testData.productTitle);
 
     await productPage.addToCart();
 
     await miniCartModal.waitForItem();
     basketCount = await miniCartModal.getBasketCount();
     expect.soft(basketCount).toEqual(expectedBasketCount);
-    const newPage = await miniCartModal.clickCheckout();
+    const projectName = testInfo.project.name;
+    const newPage = await miniCartModal.clickCheckout(projectName);
 
-    const cartPage = new CartPage(newPage);
+    const cartPage = new CartPage(newPage, localizationFixture.selectors.cartPage);
     await cartPage.waitForLoadingModule();
-    headerComponent = new HeaderComponent(newPage);
-    miniCartModal = new MiniCartModal(newPage, context);
+    headerComponent = new HeaderComponent(newPage, localizationFixture.selectors.headerComponent);
+    miniCartModal = new MiniCartModal(newPage, context, localizationFixture.selectors.miniCartModal);
 
     const productName = await cartPage.getProductName();
     expect.soft(productName).toEqual(expectedProductName);
@@ -85,17 +86,17 @@ test.describe('Product tests', () => {
     expect.soft(basketCount).toEqual(expectedDeletedBasketCount);
   });
 
-  test('Verify links and images on product page', async ({ page, baseURL, context }) => {
-    const alertModal = new AlertModal(page);
-    const headerComponent = new HeaderComponent(page);
+  test('Verify links and images on product page', async ({ page, baseURL, localizationFixture }) => {
+    const alertModal = new AlertModal(page, localizationFixture.selectors.alertModal);
+    const headerComponent = new HeaderComponent(page, localizationFixture.selectors.headerComponent);
     const shopPage = new ShopPage(page);
-    const productPage = new ProductPage(page);
+    const productPage = new ProductPage(page, localizationFixture.selectors.productPage);
 
     await alertModal.acceptCookiesAndAge();
 
     await headerComponent.gotoShop();
 
-    await shopPage.clickProductByTitle('Ploom X Advanced');
+    await shopPage.clickProductByTitle(localizationFixture.testData.productTitle);
     
     await productPage.verifyLinks(baseURL);
     await productPage.verifyImages();

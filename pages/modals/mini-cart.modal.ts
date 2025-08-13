@@ -1,4 +1,10 @@
-import { Page, Locator, BrowserContext } from '@playwright/test';
+import { Page, Locator, BrowserContext, expect } from '@playwright/test';
+
+type miniCartModalSelectors = {
+  item: string;
+  basketCount: string;
+  checkoutBtn: string;
+};
 
 export class MiniCartModal {
   readonly context: BrowserContext;
@@ -7,12 +13,12 @@ export class MiniCartModal {
   readonly basketCount: Locator;
   readonly checkoutBtn: Locator;
 
-  constructor(page: Page, context: BrowserContext) {
+  constructor(page: Page, context: BrowserContext, selectors: miniCartModalSelectors) {
     this.context = context;
     this.page = page;
-    this.item = this.page.getByTestId('item');
-    this.basketCount = this.page.locator('.CartMiniHeader-module-count-i2EyF');
-    this.checkoutBtn = this.page.getByTestId('miniCartCheckoutButton');
+    this.item = this.page.getByTestId(selectors.item);
+    this.basketCount = this.page.locator(selectors.basketCount);
+    this.checkoutBtn = this.page.getByTestId(selectors.checkoutBtn);
   }
 
   async waitForItem() {
@@ -23,8 +29,16 @@ export class MiniCartModal {
     return await this.basketCount.innerText();
   }
 
-  async clickCheckout() {
-    const [newPage] = await Promise.all([this.context.waitForEvent('page'), await this.checkoutBtn.click()]);
+  async clickCheckout(projectName: string) {
+    if (projectName === 'pl-PL') {
+      await this.checkoutBtn.click();
+      return this.page;
+    }
+
+    const [newPage] = await Promise.all([
+      this.context.waitForEvent('page', { predicate: (page) => page.url().includes('/cart') }),
+      await this.checkoutBtn.click(),
+    ]);
     return newPage;
   }
 }

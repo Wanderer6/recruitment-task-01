@@ -1,5 +1,14 @@
 import { Page, Locator } from '@playwright/test';
 
+type CartPageSelectors = {
+  container: string;
+  loadingModule: string;
+  productName: string;
+  removeItemBtn: string;
+  confirmRemove: string;
+  emptyCartText: string;
+};
+
 export class CartPage {
   readonly page: Page;
   readonly container: Locator;
@@ -9,19 +18,19 @@ export class CartPage {
   readonly confirmRemove: Locator;
   readonly emptyCartText: Locator;
 
-  constructor(page: Page) {
+  constructor(page: Page, selectors: CartPageSelectors) {
     this.page = page;
-    this.container = this.page.locator('#one-page-checkout');
-    this.loadingModule = this.container.locator('.Loading-module-active-VxV5D');
-    this.productName = this.page.getByTestId('main-section').locator('strong');
+    this.container = this.page.locator(selectors.container);
+    this.loadingModule = this.container.locator(selectors.loadingModule);
+    this.productName = this.page.getByTestId(selectors.productName).locator('strong');
     this.removeItemBtn = this.container.getByTestId('cartRemoveButton');
-    this.confirmRemove = this.page.getByTestId('remove-item-submit-button');
-    this.emptyCartText = this.container.getByTestId('emptyCartContainer');
+    this.confirmRemove = this.page.getByTestId(selectors.confirmRemove);
+    this.emptyCartText = this.container.getByTestId(selectors.emptyCartText);
   }
 
   async waitForLoadingModule() {
     try {
-      await this.container.locator('.Loading-module-active-VxV5D').waitFor();
+      await this.loadingModule.waitFor();
       await this.loadingModule.waitFor({ state: 'hidden', timeout: 5000 });
     } catch (error) {
       await this.page.reload();

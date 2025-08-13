@@ -8,6 +8,7 @@ export class ShopPage {
   }
 
   async clickProductByTitle(title: string) {
+    await this.page.getByTitle(title).scrollIntoViewIfNeeded();
     await this.page.getByTitle(title).click();
   }
 }

@@ -1,18 +1,28 @@
 import { Page, Locator } from '@playwright/test';
 
+type HeaderComponentSelectors = {
+  navigationItemContainer: string;
+  shopText: string;
+  closeMenuBtn: string;
+  miniCartBtn: string;
+  navigationLinkContainer: string;
+};
+
 export class HeaderComponent {
   readonly page: Page;
   readonly navigationItemContainer: Locator;
   readonly shopLink: Locator;
   readonly closeMenuBtn: Locator;
   readonly miniCartBtn: Locator;
+  readonly navigationLinkContainer: Locator;
 
-  constructor(page: Page) {
+  constructor(page: Page, selectors: HeaderComponentSelectors) {
     this.page = page;
-    this.navigationItemContainer = page.locator('.navigation__item--active');
-    this.shopLink = page.getByTestId('headerItem-0');
-    this.closeMenuBtn = this.navigationItemContainer.getByTestId('CloseShopMenu');
-    this.miniCartBtn = this.page.getByTestId('cartIcon');
+    this.navigationLinkContainer = page.locator(selectors.navigationLinkContainer);
+    this.navigationItemContainer = page.locator(selectors.navigationItemContainer);
+    this.shopLink = this.navigationLinkContainer.getByText(selectors.shopText);
+    this.closeMenuBtn = this.navigationItemContainer.getByTestId(selectors.closeMenuBtn);
+    this.miniCartBtn = this.page.getByTestId(selectors.miniCartBtn);
   }
 
   async gotoShop() {
@@ -20,7 +30,7 @@ export class HeaderComponent {
     await this.closeMenuBtn.click();
   }
 
-  async clickMiniCart(){
+  async clickMiniCart() {
     await this.miniCartBtn.click();
   }
 }

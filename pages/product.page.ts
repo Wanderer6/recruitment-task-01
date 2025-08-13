@@ -1,44 +1,38 @@
 import { Page, Locator, request, expect } from '@playwright/test';
 
+type ProductPageSelectors = {
+  productContainer: string;
+  addToCartBtn: string;
+  linkText: string;
+  links: string;
+  images: string;
+};
+
 export class ProductPage {
   readonly page: Page;
+  readonly productContainer: Locator;
   readonly addToCartBtn: Locator;
-  readonly links: Locator[];
-  readonly imageLocators: Locator[];
+  readonly links: Locator;
+  readonly images: Locator;
 
-  constructor(page: Page) {
+  constructor(page: Page, selectors: ProductPageSelectors) {
     this.page = page;
-    this.addToCartBtn = this.page.getByTestId('pdpAddToProduct');
-
-    this.links = [
-      this.page.locator('[data-sku="PLOOM-X-FLAVOUR BUN"] a').filter({ hasNotText: 'Buy Now' }),
-      this.page.locator('[data-sku="PLOOM-X-FLAVOUR BUN"] a').filter({ hasText: 'Buy Now' }),
-      this.page.locator('[data-sku="EVO-MIX-10-PACK"] a').filter({ hasNotText: 'Buy Now' }),
-      this.page.locator('[data-sku="EVO-MIX-10-PACK"] a').filter({ hasText: 'Buy Now' }),
-      this.page.locator('[data-sku="PLOOM-X-STARTER-BUNDLE"] a').filter({ hasNotText: 'Buy Now' }),
-      this.page.locator('[data-sku="PLOOM-X-STARTER-BUNDLE"] a').filter({ hasText: 'Buy Now' }),
-    ];
-
-    this.imageLocators = [
-      this.page.getByTestId('aem-carousel__thumbnail-0'),
-      this.page.getByTestId('aem-carousel__thumbnail-2'),
-      this.page.getByTestId('aem-carousel__thumbnail-3'),
-      this.page.locator('[data-sku="PLOOM-X-FLAVOUR BUN"] img'),
-      this.page.locator('[data-sku="EVO-MIX-10-PACK"] img'),
-      this.page.locator('[data-sku="PLOOM-X-STARTER-BUNDLE"] img'),
-      this.page.getByRole('img', { name: 'Black Ploom X Device', exact: true }),
-      this.page.getByRole('img', { name: 'Opened Black Ploom X Device' }),
-      this.page.getByRole('img', { name: 'Ploom X Devices in various' }),
-      this.page.getByRole('img', { name: 'Ploom X Device in Black' }),
-    ];
+    this.productContainer = this.page.locator(selectors.productContainer);
+    this.addToCartBtn = this.page.getByTestId(selectors.addToCartBtn);
+    this.links = this.page.locator(selectors.links);
+    this.images = this.productContainer.locator(selectors.images);
   }
 
   async addToCart() {
+    await this.page.waitForTimeout(4000);
     await this.addToCartBtn.click();
   }
 
   async verifyLinks(baseURL: string | undefined) {
-    for (const link of this.links) {
+    await this.addToCartBtn.waitFor();
+    const linksCount = await this.links.count();
+    for (let i = 0; i < linksCount; i++) {
+      const link = this.links.nth(i);
       const rawHref = await link.getAttribute('href');
       if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript')) continue;
       const url = new URL(rawHref, baseURL).toString();
@@ -48,29 +42,32 @@ export class ProductPage {
       await apiRequestContext.dispose();
     }
   }
-
+  
   async verifyImages() {
-    for (const locator of this.imageLocators) {
-      await locator.scrollIntoViewIfNeeded();
-      await this.page.waitForTimeout(500);
-      expect.soft(await locator.screenshot()).toMatchSnapshot({ maxDiffPixels: 15 });
-    }
-  }
-
-  async alternativeVerifyImages() {
-    for (const locator of this.imageLocators) {
-      await locator.scrollIntoViewIfNeeded();
-      const img = await locator.elementHandle();
+    const count = await this.images.count();
+    for (let i = 0; i < count; i++) {
+      await this.images.nth(i).scrollIntoViewIfNeeded();
+      const img = await this.images.nth(i).elementHandle();
       if (img) {
         await this.page.waitForFunction((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0, img);
         const isLoaded = await img.evaluate((node) => {
           const image = node as HTMLImageElement;
           return image.complete && image.naturalWidth > 0;
         });
-        expect(isLoaded).toBeTruthy();
+        expect.soft(isLoaded).toBeTruthy();
       } else {
-        expect(img).not.toBeNull();
+        expect.soft(img).not.toBeNull();
       }
+    }
+  }
+
+  async alternativeVerifyImages() {
+    const count = await this.images.count();
+    for (let i = 0; i < count; i++) {
+      const image = this.images.nth(i);
+      await image.scrollIntoViewIfNeeded();
+      await this.page.waitForTimeout(700);
+      expect.soft(await image.screenshot()).toMatchSnapshot({ maxDiffPixelRatio: 0.01 });
     }
   }
 }
